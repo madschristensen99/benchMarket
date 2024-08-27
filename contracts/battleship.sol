@@ -2,111 +2,151 @@
 pragma solidity ^0.8.13;
 
 import "@fhenixprotocol/contracts/FHE.sol";
+import "./interfaces/Permissioned.sol";
 
-contract Battleship {
+contract Battleship is Permissioned {
     // Game board size
     uint8 private constant BOARD_SIZE = 10;
     uint8 private constant BOARD_CELLS = BOARD_SIZE * BOARD_SIZE;
 
+    // Ship sizes
+    uint8 private constant CARRIER_SIZE = 5;
+    uint8 private constant BATTLESHIP_SIZE = 4;
+    uint8 private constant CRUISER_SIZE = 3;
+    uint8 private constant SUBMARINE_SIZE = 3;
+    uint8 private constant DESTROYER_SIZE = 2;
+
     // Total number of ship cells
-    uint8 private constant TOTAL_SHIP_CELLS = 17; // 5 + 4 + 3 + 3 + 2
+    uint8 private constant TOTAL_SHIP_CELLS = CARRIER_SIZE + BATTLESHIP_SIZE + CRUISER_SIZE + SUBMARINE_SIZE + DESTROYER_SIZE;
 
     // Game state
     enum GameState { Waiting, Playing, Finished }
-    GameState public gameState;
 
-    // Player addresses
-    address public player1;
-    address public player2;
+    struct Game {
+        GameState state;
+        address player1;
+        address player2;
+        mapping(address => euint8[BOARD_CELLS]) shipBoards;
+        mapping(address => euint8[BOARD_CELLS]) hitBoards;
+        mapping(address => euint8) hitCounters;
+        uint256 lastActionTimestamp;
+    }
 
-    // Encrypted game boards (1 for ship placement, 1 for hits)
-    mapping(address => euint8[BOARD_CELLS]) private shipBoards;
-    mapping(address => euint8[BOARD_CELLS]) private hitBoards;
-
-    // Encrypted hit counters
-    mapping(address => euint8) private hitCounters;
+    // Mapping of game ID to Game struct
+    mapping(uint256 => Game) public games;
+    uint256 public gameCounter;
 
     // Events
-    event GameStarted(address player1, address player2);
-    event ShotFired(address player, uint8 position);
-    event GameEnded(address winner);
+    event GameCreated(uint256 gameId, address player1);
+    event GameJoined(uint256 gameId, address player2);
+    event GameStarted(uint256 gameId, address player1, address player2);
+    event ShotFired(uint256 gameId, address player, uint8 position);
+    event GameEnded(uint256 gameId, address winner);
 
-    constructor() {
-        gameState = GameState.Waiting;
+    // Timeout duration (in seconds)
+    uint256 public constant TIMEOUT_DURATION = 5 minutes;
+
+    function createGame() external returns (uint256) {
+        uint256 gameId = gameCounter++;
+        Game storage game = games[gameId];
+        game.state = GameState.Waiting;
+        game.player1 = msg.sender;
+        game.lastActionTimestamp = block.timestamp;
+        emit GameCreated(gameId, msg.sender);
+        return gameId;
     }
 
-    function joinGame() external {
-        require(gameState == GameState.Waiting, "Game is not in waiting state");
-        
-        if (player1 == address(0)) {
-            player1 = msg.sender;
-        } else if (player2 == address(0)) {
-            player2 = msg.sender;
-            gameState = GameState.Playing;
-            emit GameStarted(player1, player2);
-        } else {
-            revert("Game is full");
-        }
+    function joinGame(uint256 gameId) external {
+        Game storage game = games[gameId];
+        require(game.state == GameState.Waiting, "Game is not in waiting state");
+        require(game.player2 == address(0), "Game is already full");
+        require(msg.sender != game.player1, "Cannot join your own game");
+
+        game.player2 = msg.sender;
+        game.state = GameState.Playing;
+        game.lastActionTimestamp = block.timestamp;
+        emit GameJoined(gameId, msg.sender);
+        emit GameStarted(gameId, game.player1, game.player2);
     }
 
-    function placeShips(inEuint8[] calldata encryptedBoard) external {
-        require(msg.sender == player1 || msg.sender == player2, "Not a player");
-        require(gameState == GameState.Playing, "Game is not in playing state");
+    function placeShips(uint256 gameId, inEuint8[] calldata encryptedBoard) external {
+        Game storage game = games[gameId];
+        require(msg.sender == game.player1 || msg.sender == game.player2, "Not a player in this game");
+        require(game.state == GameState.Playing, "Game is not in playing state");
         require(encryptedBoard.length == BOARD_CELLS, "Invalid board size");
 
         for (uint8 i = 0; i < BOARD_CELLS; i++) {
-            shipBoards[msg.sender][i] = FHE.asEuint8(encryptedBoard[i]);
+            game.shipBoards[msg.sender][i] = FHE.asEuint8(encryptedBoard[i]);
         }
+        game.lastActionTimestamp = block.timestamp;
     }
 
-    function fireShot(address target, uint8 position) external {
-        require(msg.sender == player1 || msg.sender == player2, "Not a player");
-        require(msg.sender != target, "Cannot shoot at your own board");
-        require(gameState == GameState.Playing, "Game is not in playing state");
+    function fireShot(uint256 gameId, uint8 position) external {
+        Game storage game = games[gameId];
+        require(msg.sender == game.player1 || msg.sender == game.player2, "Not a player in this game");
+        require(game.state == GameState.Playing, "Game is not in playing state");
         require(position < BOARD_CELLS, "Invalid position");
 
-        emit ShotFired(msg.sender, position);
+        address target = getOpponent(gameId, msg.sender);
+        emit ShotFired(gameId, msg.sender, position);
 
-        euint8 cellValue = shipBoards[target][position];
+        euint8 cellValue = game.shipBoards[target][position];
         ebool isHit = cellValue.eq(FHE.asEuint8(1));
-        
+
         // Update hit board and counter
-        hitBoards[target][position] = FHE.asEuint8(isHit);
-        hitCounters[target] = hitCounters[target] + FHE.asEuint8(isHit);
+        game.hitBoards[target][position] = FHE.asEuint8(isHit);
+        game.hitCounters[target] = game.hitCounters[target] + FHE.asEuint8(isHit);
 
         // Check if the game has ended
-        ebool gameEnded = hitCounters[target].eq(FHE.asEuint8(TOTAL_SHIP_CELLS));
-        
+        ebool gameEnded = game.hitCounters[target].eq(FHE.asEuint8(TOTAL_SHIP_CELLS));
+
         if (FHE.decrypt(gameEnded)) {
-            gameState = GameState.Finished;
-            emit GameEnded(msg.sender);
+            game.state = GameState.Finished;
+            emit GameEnded(gameId, msg.sender);
         }
+
+        game.lastActionTimestamp = block.timestamp;
     }
 
-    function getShipBoard(address player) external view returns (euint8[] memory) {
-        require(msg.sender == player, "Can only view your own board");
-        euint8[] memory board = new euint8[](BOARD_CELLS);
+    function getShipBoard(uint256 gameId, Permission calldata perm, address player) external view onlySender(perm) returns (uint8[] memory) {
+        Game storage game = games[gameId];
+        require(player == game.player1 || player == game.player2, "Not a player in this game");
+
+        uint8[] memory board = new uint8[](BOARD_CELLS);
         for (uint8 i = 0; i < BOARD_CELLS; i++) {
-            board[i] = shipBoards[player][i];
+            board[i] = FHE.decrypt(game.shipBoards[player][i]);
         }
         return board;
     }
 
-    function getHitBoard(address player) external view returns (euint8[] memory) {
-        require(msg.sender == player || msg.sender == getOpponent(player), "Not authorized");
+    function getHitBoard(uint256 gameId, address player) external view returns (euint8[] memory) {
+        Game storage game = games[gameId];
+        require(msg.sender == player || msg.sender == getOpponent(gameId, player), "Not authorized");
+
         euint8[] memory board = new euint8[](BOARD_CELLS);
         for (uint8 i = 0; i < BOARD_CELLS; i++) {
-            board[i] = hitBoards[player][i];
+            board[i] = game.hitBoards[player][i];
         }
         return board;
     }
 
-    function getHitCounter(address player) external view returns (euint8) {
-        require(msg.sender == player || msg.sender == getOpponent(player), "Not authorized");
-        return hitCounters[player];
+    function getHitCounter(uint256 gameId, address player) external view returns (euint8) {
+        Game storage game = games[gameId];
+        require(msg.sender == player || msg.sender == getOpponent(gameId, player), "Not authorized");
+        return game.hitCounters[player];
     }
 
-    function getOpponent(address player) internal view returns (address) {
-        return player == player1 ? player2 : player1;
+    function getOpponent(uint256 gameId, address player) internal view returns (address) {
+        Game storage game = games[gameId];
+        return player == game.player1 ? game.player2 : game.player1;
+    }
+
+    function checkTimeout(uint256 gameId) external {
+        Game storage game = games[gameId];
+        require(game.state == GameState.Playing, "Game is not in playing state");
+        require(block.timestamp > game.lastActionTimestamp + TIMEOUT_DURATION, "Timeout period has not elapsed");
+
+        game.state = GameState.Finished;
+        emit GameEnded(gameId, getOpponent(gameId, msg.sender));
     }
 }
