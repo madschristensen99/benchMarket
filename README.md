@@ -5,3 +5,7 @@ We have inside of the repository a simple HTML CSS JS structure and it also incl
 Demo link:
 
 https://webed.academy/benchMarket/index.html
+
+Video:
+
+https://www.youtube.com/watch?v=HcfgL74MmY4
