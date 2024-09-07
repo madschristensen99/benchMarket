@@ -1,27 +1,3 @@
-# Fhenix Battleship Game
+Welcome to Benchmarket!
 
-![Fhenix Battleship Game Logo](path/to/your/logo.png)
-
-## Table of Contents
-- [Introduction](#introduction)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contracts](#contracts)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Introduction
-
-Fhenix Battleship Game is an innovative project that brings the classic game of Battleship to the blockchain, leveraging the power of Fhenix and Galadriel. This project combines a user-friendly web interface with smart contracts to create a secure and engaging gaming experience.
-
-## Features
-
-- Web-based UI built with HTML, CSS, and JavaScript
-- Blockchain integration using Fhenix
-- AI opponent powered by Galadriel
-- Smart contracts for game logic and Benchmarket integration
-- Node.js backend for connecting Fhenix and Galadriel
-
-## Project Structure
+We have inside of the repository a simple HTML CSS JS structure and it also includes magic.js which can be run with node.js to connect fhenix and galadriel. Inside the contracts folder are battleship.sol, IBenchmarket.sol, and groq.sol Battleship enables the battleship game to be played on Fhenix it employs IBenchmarket which is a standard for gaming contracts within the Benchmarket ecosystem and groq.sol is for Galadriel to be able to have startChat(chatId, model) where model is the model we are playing against.
