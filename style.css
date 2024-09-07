@@ -7,31 +7,27 @@ body {
     margin: 0;
     background-color: #f0f0f0;
 }
-
 .game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
-
 .boards-container {
     display: flex;
     gap: 20px;
 }
-
 .board {
     display: grid;
-    grid-template-columns: repeat(10, 30px);
-    grid-template-rows: repeat(10, 30px);
+    grid-template-columns: repeat(4, 50px); /* Changed from 10 to 4 */
+    grid-template-rows: repeat(4, 50px); /* Changed from 10 to 4 */
     gap: 1px;
     background-color: #ddd;
     padding: 10px;
     border-radius: 5px;
 }
-
 .cell {
-    width: 30px;
-    height: 30px;
+    width: 50px; /* Increased from 30px to 50px */
+    height: 50px; /* Increased from 30px to 50px */
     background-color: #fff;
     border: 1px solid #999;
     display: flex;
@@ -39,25 +35,21 @@ body {
     align-items: center;
     cursor: pointer;
 }
-
-.ship {
-    background-color: #999;
-}
-
-.hit {
-    background-color: #ff6b6b;
-}
-
-.miss {
-    background-color: #4ecdc4;
-}
-
+        .ship {
+            background-color: #3498db; /* Change to a nice blue color */
+            border: 2px solid #2980b9; /* Add a border for better visibility */
+        }
+        .hit {
+            background-color: #e74c3c; /* Brighter red for hits */
+        }
+        .miss {
+            background-color: #95a5a6; /* Softer color for misses */
+        }
 .controls {
     margin-top: 20px;
     display: flex;
     gap: 10px;
 }
-
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -67,13 +59,36 @@ button {
     border: none;
     border-radius: 5px;
 }
-
 button:hover {
     background-color: #2980b9;
 }
-
 .status {
     margin-top: 20px;
     font-size: 18px;
     font-weight: bold;
 }
+  .model-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .model-button {
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .model-button:hover {
+    background-color: #e0e0e0;
+  }
+
+  .model-button.active {
+    background-color: #007bff;
+    color: white;
+  }
