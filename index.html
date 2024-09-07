@@ -1,225 +1,240 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Fhenix Battleship</title>
-  <meta charset="UTF-8" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bench Market 🏋️‍♂️🤖 AI Model Showdown!</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 5px solid #4a148c;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .logo {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #6a1b9a;
+            color: #fff;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+            transition: background-color 0.3s ease;
+        }
+        .technologies {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .tech-item {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .tech-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .model-name {
+            font-weight: bold;
+            color: #4a148c;
+        }
+        .win-rate {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .odds {
+            font-style: italic;
+            color: #2c3e50;
+        }
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 5px;
+        }
+        .game-link {
+            display: inline-block;
+            background-color: #ff4081;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .game-link:hover {
+            background-color: #f50057;
+            transform: scale(1.05);
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1 class="title">Fhenix Battleship</h1>
-    <!-- Logged In -->
-    <div class="grid btn-logged-in">
-      <button id="get-user-info" class="btn">Get User Info</button>
-      <button id="get-accounts" class="btn">Get Accounts</button>
-      <button id="get-balance" class="btn">Get Balance</button>
-      <button id="sign-message" class="btn">Sign Message</button>
-      <button id="show-wallet" class="btn">Show Wallet</button>
-      <button id="logout" class="btn">Logout</button>
-      <div class="console" id="console">
-        <p id="code" class="code"></p>
-      </div>
+    <header>
+        <div class="logo">🏋️‍♂️ BENCH MARKET 🤖</div>
+        <h1>AI Model Performance Showdown!</h1>
+    </header>
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Game</th>
+                    <th><span class="emoji">🦙</span>llama-3.1-70b-versatile</th>
+                    <th><span class="emoji">⚡</span>llama-3.1-8b-instant</th>
+                    <th><span class="emoji">🦙</span>llama3-8b-8192</th>
+                    <th><span class="emoji">🦙</span>llama3-70b-8192</th>
+                    <th><span class="emoji">🌪️</span>mixtral-8x7b-32768</th>
+                    <th><span class="emoji">💎</span>gemma-7b-it</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="model-name">
+                        <a href="./battleship.html" class="game-link">
+                            <span class="emoji">🚢</span>Battleship
+                        </a>
+                    </td>
+                    <td>
+                        <div class="win-rate" id="win-rate-llama-3.1-70b-versatile">Loading...</div>
+                        <div class="odds" id="odds-llama-3.1-70b-versatile">Loading...</div>
+                    </td>
+                    <td>
+                        <div class="win-rate" id="win-rate-llama-3.1-8b-instant">Loading...</div>
+                        <div class="odds" id="odds-llama-3.1-8b-instant">Loading...</div>
+                    </td>
+                    <td>
+                        <div class="win-rate" id="win-rate-llama3-8b-8192">Loading...</div>
+                        <div class="odds" id="odds-llama3-8b-8192">Loading...</div>
+                    </td>
+                    <td>
+                        <div class="win-rate" id="win-rate-llama3-70b-8192">Loading...</div>
+                        <div class="odds" id="odds-llama3-70b-8192">Loading...</div>
+                    </td>
+                    <td>
+                        <div class="win-rate" id="win-rate-mixtral-8x7b-32768">Loading...</div>
+                        <div class="odds" id="odds-mixtral-8x7b-32768">Loading...</div>
+                    </td>
+                    <td>
+                        <div class="win-rate" id="win-rate-gemma-7b-it">Loading...</div>
+                        <div class="odds" id="odds-gemma-7b-it">Loading...</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="technologies">
+            <div class="tech-item">🎮 Private Gamestate</div>
+            <div class="tech-item">🔐 Multi-Party Computation (MPC)</div>
+            <div class="tech-item">🔑 Account Abstraction</div>
+            <div class="tech-item">🔒 Fully Homomorphic Encryption (FHE)</div>
+            <div class="tech-item">🤖 Artificial Intelligence (AI)</div>
+            <div class="tech-item">🧠 Trusted Execution Environment ML (TEEML)</div>
+            <div class="tech-item">🎬 Fair Gameplay</div>
+            <div class="tech-item">🔐 Auth</div>
+        </div>
     </div>
 
-    <!-- Logged Out -->
-    <div class="grid btn-logged-out">
-      <button id="login" class="btn">Login</button>
-    </div>
+    <script type = "module">
+        import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.esm.min.js";
+        import { BATTLESHIP_ADDRESS, BATTLESHIP_ABI } from './constants.js';
+        const provider = new ethers.providers.JsonRpcProvider("https://api.helium.fhenix.zone");
+        const contract = new ethers.Contract(BATTLESHIP_ADDRESS, BATTLESHIP_ABI, provider);
+        let wins = await contract.getModelWins("llama-3.1-70b-versatile");
+        let loss = await contract.getModelLosses("llama-3.1-70b-versatile");
+        let wins2 = await contract.getModelWins("llama-3.1-8b-instant");
+        let loss2 = await contract.getModelLosses("llama-3.1-8b-instant");
+        let wins3 = await contract.getModelWins("llama3-8b-8192");
+        let loss3 = await contract.getModelLosses("llama3-8b-8192");
+        let wins4 = await contract.getModelWins("llama3-70b-8192");
+        let loss4 = await contract.getModelLosses("llama3-70b-8192");
+        let wins5 = await contract.getModelWins("mixtral-8x7b-32768");
+        let loss5 = await contract.getModelLosses("mixtral-8x7b-32768");
+        let wins6 = await contract.getModelWins("gemma-7b-it");
+        let loss6 = await contract.getModelLosses("gemma-7b-it");
+        // This script would be replaced with actual data fetching from your smart contract
+        async function fetchModelData() {
+            // Simulating API call or blockchain interaction
+            setTimeout(() => {
+                const modelData = {
+                    "llama-3.1-70b-versatile": { winRate: `${wins}/${loss}`, odds: "EVEN" },
+                    "llama-3.1-8b-instant": { winRate: `${wins2}/${loss2}`, odds: "DNF" },
+                    "llama3-8b-8192": { winRate: `${wins3}/${loss3}`, odds: "DNF" },
+                    "llama3-70b-8192": { winRate: `${wins4}/${loss4}`, odds: "EVEN" },
+                    "mixtral-8x7b-32768": { winRate: `${wins5}/${loss5}`, odds: "EVEN" },
+                    "gemma-7b-it": { winRate: `${wins6}/${loss6}`, odds: "DNF" }
+                };
 
-    <!-- Game container -->
-    <div class="game-container">
-      <div class="boards-container">
-        <div id="player-board" class="board"></div>
-        <div id="opponent-board" class="board"></div>
-      </div>
-      <div class="controls">
-        <button id="create-game" class="btn">Create Game</button>
-        <input type="number" id="game-id-input" placeholder="Game ID">
-        <button id="join-game" class="btn">Join Game</button>
-        <button id="place-ships" class="btn">Place Ships</button>
-      </div>
-      <div id="game-status" class="status"></div>
-    </div>
-  </div>
+                Object.keys(modelData).forEach(model => {
+                    const winRateElement = document.getElementById(`win-rate-${model}`);
+                    const oddsElement = document.getElementById(`odds-${model}`);
+                    if (winRateElement && oddsElement) {
+                        winRateElement.textContent = modelData[model].winRate;
+                        oddsElement.textContent = modelData[model].odds;
+                    }
+                });
+            }, 1000); // Simulating a 1-second delay
+        }
 
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
-  <script src="https://unpkg.com/base64-js@1.5.1/base64js.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@web3auth/wallet-services-plugin"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@web3auth/ethereum-provider"></script>
-  <script src="https://cdn.jsdelivr.net/npm/web3@4.1.1/dist/web3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fhenixjs@0.3.0-alpha.1/dist/fhenix.umd.min.js"></script>
+        fetchModelData();
 
-  <script type="module">
-  import { ethers } from "../ethers.min.js";
-  import { BATTLESHIP_ABI, BATTLESHIP_ADDRESS } from './constants.js';
+        // Add some interactivity
+        document.querySelectorAll('.tech-item').forEach(item => {
+            item.addEventListener('click', () => {
+                alert(`You clicked on ${item.textContent.split(' ')[1]}! 🎉`);
+            });
+        });
 
-  let web3auth = null;
-  let walletServicesPlugin = null;
-  let fhenixClient = null;
-  let battleshipContract = null;
-  let currentGameId = null;
-
-  const BOARD_SIZE = 10;
-  const BOARD_CELLS = BOARD_SIZE * BOARD_SIZE;
-
-  async function init() {
-    $(".btn-logged-in").hide();
-    $(".game-container").hide();
-
-    const clientId = "BKFLAA4PxFOm-tmlwmXOwC35iB1rLyWAaq7cjUjjz13wCh1zcGJz3JVJKcWdHiKq98QndXv7gUYpP94HoDmB1cg";
-
-    const chainConfig = {
-      chainNamespace: "eip155",
-      chainId: "0x7a31c7",
-      rpcTarget: "https://api.helium.fhenix.zone",
-      displayName: "Fhenix Helium Testnet",
-      blockExplorerUrl: "https://explorer.helium.fhenix.zone/",
-      ticker: "tFHE",
-      tickerName: "tFhenix",
-    };
-
-    const privateKeyProvider = new window.EthereumProvider.EthereumPrivateKeyProvider({ config: { chainConfig } });
-    web3auth = new window.Modal.Web3Auth({
-      clientId,
-      privateKeyProvider,
-      web3AuthNetwork: "sapphire_mainnet",
-    });
-
-    walletServicesPlugin = new window.WalletServicesPlugin.WalletServicesPlugin();
-    web3auth.addPlugin(walletServicesPlugin);
-
-    await web3auth.initModal();
-    
-    if (web3auth.connected) {
-      onLogin();
-    }
-  }
-
-  async function onLogin() {
-    $(".btn-logged-in").show();
-    $(".btn-logged-out").hide();
-    $(".game-container").show();
-
-    const provider = new ethers.providers.Web3Provider(web3auth.provider);
-    const signer = provider.getSigner();
-    battleshipContract = new ethers.Contract(BATTLESHIP_ADDRESS, BATTLESHIP_ABI, signer);
-
-    fhenixClient = new fhenixjs.FhenixClient({ provider });
-    const permit = await fhenixjs.getPermit(BATTLESHIP_ADDRESS, provider);
-    fhenixClient.storePermit(permit);
-
-    initializeBoards();
-  }
-
-  function initializeBoards() {
-    const playerBoard = document.getElementById('player-board');
-    const opponentBoard = document.getElementById('opponent-board');
-
-    for (let i = 0; i < BOARD_CELLS; i++) {
-      const playerCell = document.createElement('div');
-      playerCell.classList.add('cell');
-      playerBoard.appendChild(playerCell);
-
-      const opponentCell = document.createElement('div');
-      opponentCell.classList.add('cell');
-      opponentCell.addEventListener('click', () => fireShot(i));
-      opponentBoard.appendChild(opponentCell);
-    }
-  }
-
-  async function createGame() {
-    try {
-      const tx = await battleshipContract.createGame();
-      const receipt = await tx.wait();
-      const event = receipt.events.find(e => e.event === 'GameCreated');
-      currentGameId = event.args.gameId.toNumber();
-      uiConsole(`Game created with ID: ${currentGameId}`);
-    } catch (error) {
-      uiConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async function joinGame() {
-    const gameId = document.getElementById('game-id-input').value;
-    try {
-      await battleshipContract.joinGame(gameId);
-      currentGameId = gameId;
-      uiConsole(`Joined game with ID: ${gameId}`);
-    } catch (error) {
-      uiConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async function placeShips() {
-    const encryptedBoard = Array(BOARD_CELLS).fill(0);
-    for (let i = 0; i < 17; i++) {
-      encryptedBoard[i] = await fhenixClient.encrypt(1);
-    }
-    try {
-      await battleshipContract.placeShips(currentGameId, encryptedBoard);
-      uiConsole("Ships placed successfully");
-    } catch (error) {
-      uiConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async function fireShot(position) {
-    try {
-      await battleshipContract.fireShot(currentGameId, position);
-      uiConsole(`Shot fired at position: ${position}`);
-      updateBoards();
-    } catch (error) {
-      uiConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async function updateBoards() {
-    const signer = (new ethers.providers.Web3Provider(web3auth.provider)).getSigner();
-    const playerBoard = await battleshipContract.getShipBoard(currentGameId, await fhenixClient.getPermit(), await signer.getAddress());
-    const opponentHitBoard = await battleshipContract.getHitBoard(currentGameId, await signer.getAddress());
-
-    for (let i = 0; i < BOARD_CELLS; i++) {
-      const playerCell = document.querySelector(`#player-board .cell:nth-child(${i+1})`);
-      const opponentCell = document.querySelector(`#opponent-board .cell:nth-child(${i+1})`);
-
-      if (playerBoard[i] === 1) playerCell.classList.add('ship');
-      
-      const hitResult = await fhenixClient.decrypt(opponentHitBoard[i]);
-      if (hitResult === 1) opponentCell.classList.add('hit');
-      else if (hitResult === 0) opponentCell.classList.add('miss');
-    }
-  }
-
-  function uiConsole(...args) {
-    const el = document.querySelector("#console>p");
-    if (el) {
-      el.innerHTML = JSON.stringify(args || {}, null, 2);
-    }
-  }
-
-  // Event listeners
-  $("#login").click(() => web3auth.connect().then(onLogin));
-  $("#logout").click(() => web3auth.logout().then(() => {
-    $(".btn-logged-in").hide();
-    $(".btn-logged-out").show();
-    $(".game-container").hide();
-  }));
-  $("#get-user-info").click(() => web3auth.getUserInfo().then(uiConsole));
-  $("#get-accounts").click(() => web3auth.provider.request({ method: 'eth_accounts' }).then(uiConsole));
-  $("#get-balance").click(() => web3auth.provider.request({ method: 'eth_getBalance', params: [web3auth.address, 'latest'] }).then(balance => uiConsole(parseInt(balance, 16))));
-  $("#sign-message").click(() => {
-    const message = "Hello World";
-    web3auth.provider.request({
-      method: 'personal_sign',
-      params: [message, web3auth.address],
-    }).then(uiConsole);
-  });
-  $("#create-game").click(createGame);
-  $("#join-game").click(joinGame);
-  $("#place-ships").click(placeShips);
-
-  init();
-  </script>
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.style.backgroundColor = '#e8f0fe';
+            });
+            row.addEventListener('mouseleave', () => {
+                row.style.backgroundColor = '';
+            });
+        });
+    </script>
 </body>
 </html>
