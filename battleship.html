@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Fhenix Battleship</title>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/fhenixjs@0.3.0-alpha.1/dist/fhenix.umd.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="title">
+      Fhenix Battleship
+    </h1>
+    <!-- Logged In -->
+    <div class="grid btn-logged-in">
+      <button id="get-user-info" class="btn">Get User Info</button>
+      <button id="get-accounts" class="btn">Get Accounts</button>
+      <button id="get-balance" class="btn">Get Balance</button>
+      <button id="sign-message" class="btn">Sign Message</button>
+      <button id="show-wallet" class="btn">Show Wallet</button>
+      
+      <button id="logout" class="btn">Logout</button>
+      <div class="console" id="console">
+        <p id="code" class="code"></p>
+      </div>
+    </div>
+
+    <!-- Logged Logout -->
+    <div class="grid btn-logged-out">
+      <button id="login" class="btn">Login</button>
+    </div>
+
+        <!-- Game container -->
+    <div class="game-container">
+      <div class="boards-container">
+        <div id="player-board" class="board"></div>
+        <div id="opponent-board" class="board"></div>
+      </div>
+      <div class="controls">
+        <button id="create-game" class="btn">Create Game</button>
+        <input type="number" id="game-id-input" placeholder="Game ID">
+        <button id="join-game" class="btn">Join Game</button>
+        <button id="place-ships" class="btn">Place Ships</button>
+      </div>
+      <br><br>
+<div class="model-container">
+  <button class="model-button" data-model="llama-3.1-70b-versatile">llama-3.1-70b-versatile</button>
+  <button class="model-button" data-model="llama-3.1-8b-instant">llama-3.1-8b-instant</button>
+  <button class="model-button" data-model="llama3-8b-8192">llama3-8b-8192</button>
+  <button class="model-button" data-model="llama3-70b-8192">llama3-70b-8192</button>
+  <button class="model-button" data-model="mixtral-8x7b-32768">mixtral-8x7b-32768</button>
+  <button class="model-button" data-model="gemma-7b-it">gemma-7b-it</button>
+</div>
+<div id="oddsBox">
+    Odds Box
+</div>
+      <div id="game-status" class="status"></div>
+    </div>
+  </div>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="https://unpkg.com/base64-js@1.5.1/base64js.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@web3auth/wallet-services-plugin"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@web3auth/ethereum-provider"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@4.1.1/dist/web3.min.js"></script>
+  
+  <script type ="module">
+  import { ethers } from "../ethers.min.js";
+  import { BATTLESHIP_ABI, BATTLESHIP_ADDRESS } from './constants.js';
+  import { FhenixClient, EncryptionTypes } from "https://cdn.jsdelivr.net/npm/fhenixjs@0.3.0-alpha.1/dist/fhenix.esm.min.js";
+
+let web3auth = null;
+let walletServicesPlugin = null;
+let fhenixClient = null;
+let battleshipContract = null;
+let currentGameId = null;
+let permit = null;
+let availableModels = ["llama-3.1-70b-versatile", "llama-3.1-8b-instant", "llama3-8b-8192", "llama3-70b-8192", "mixtral-8x7b-32768", "gemma-7b-it"];
+let currentModel = '';
+
+// Add these new global variables
+let playerBoard, opponentBoard;
+let isPlayerTurn = false;
+let playerShips = [];
+let gameState = 'waiting'; // 'waiting', 'placing', 'playing', 'finished'
+
+const BOARD_SIZE = 4;
+const BOARD_CELLS = BOARD_SIZE * BOARD_SIZE;
+const SHIP_SIZES = [2, 3]; // Destroyer and Submarine sizes
+const TOTAL_SHIP_CELLS = SHIP_SIZES.reduce((a, b) => a + b, 0);
+
+
+(async function init() {
+  $(".btn-logged-in").hide();
+  $("#sign-tx").hide();
+
+  const clientId = "BKFLAA4PxFOm-tmlwmXOwC35iB1rLyWAaq7cjUjjz13wCh1zcGJz3JVJKcWdHiKq98QndXv7gUYpP94HoDmB1cg"; // get your clientId from https://dashboard.web3auth.io
+
+  const chainConfig = {
+    chainNamespace: "eip155",
+    chainId: "0x7a31c7",
+    rpcTarget: "https://api.helium.fhenix.zone",
+    // Avoid using public rpcTarget in production.
+    // Use services like Infura, Quicknode etc
+    displayName: "Fhenix Helium",
+    blockExplorerUrl: "https://explorer.helium.fhenix.zone/",
+    ticker: "tFHE",
+    tickerName: "Fhenix",
+    logo: "https://img.cryptorank.io/coins/fhenix1695737384486.png",
+  };
+  const galadrielChainConfig = {
+    chainNamespace: "eip155",
+    chainId: "0xaa289",
+    rpcTarget: "https://devnet.galadriel.com	",
+    // Avoid using public rpcTarget in production.
+    // Use services like Infura, Quicknode etc
+    displayName: "Galadriel Devnet",
+    blockExplorerUrl: "https://explorer.galadriel.com/",
+    ticker: "GAL",
+    tickerName: "Galadriel",
+    logo: "https://w7.pngwing.com/pngs/140/41/png-transparent-galadriel-the-lord-of-the-rings-the-fellowship-of-the-ring-thranduil-gandalf-radagast-the-hobbit-elf-cate-blanchett-statue-thumbnail.png",
+  };
+
+  const privateKeyProvider = new window.EthereumProvider.EthereumPrivateKeyProvider({ config: { chainConfig } });
+
+  web3auth = new window.Modal.Web3Auth({
+    clientId,
+    privateKeyProvider,
+    web3AuthNetwork: "sapphire_mainnet",
+  });
+
+  // Add wallet service plugin
+  walletServicesPlugin = new window.WalletServicesPlugin.WalletServicesPlugin();
+  web3auth.addPlugin(walletServicesPlugin); // Add the plugin to web3auth
+
+  await web3auth.initModal();
+
+  if (web3auth.connected) {
+    $(".btn-logged-in").show();
+    $(".btn-logged-out").hide();
+    if (web3auth.connected === "openlogin") {
+      $("#sign-tx").show();
+    }
+  } else {
+    $(".btn-logged-out").show();
+    $(".btn-logged-in").hide();
+  }
+  const provider = new ethers.providers.Web3Provider(web3auth.provider);
+  fhenixClient = new fhenixjs.FhenixClient({ provider });
+  permit = await fhenixjs.getPermit(BATTLESHIP_ADDRESS, provider);
+  fhenixClient.storePermit(permit);
+
+  const signer = provider.getSigner();
+  battleshipContract = new ethers.Contract(BATTLESHIP_ADDRESS, BATTLESHIP_ABI, signer);
+  initGame();
+  currentGameId = Number(document.getElementById('game-id-input').value);
+  updateBoards();
+
+
+})();
+
+// Add these new functions
+
+function initGame() {
+  playerBoard = createBoard('player-board');
+  opponentBoard = createBoard('opponent-board');
+  
+  document.getElementById('create-game').addEventListener('click', createGame);
+  document.getElementById('join-game').addEventListener('click', joinGame);
+  document.getElementById('place-ships').addEventListener('click', startPlacingShips);
+  
+  opponentBoard.addEventListener('click', async (e) => {
+      const gameIdInput = document.getElementById('game-id-input').value;
+      const gameId = Number(gameIdInput);
+      if (isNaN(gameId) || gameId < 0 || !Number.isInteger(gameId)) {
+        uiConsole('Invalid game ID. Please enter a positive integer.');
+        return;
+      }
+      const game = await battleshipContract.games(gameId);
+      isPlayerTurn = await isCurrentPlayerTurn();
+    if (game.state == 1 && isPlayerTurn) {
+      const cell = e.target;
+      if (cell.classList.contains('cell')) {
+        const position = Array.from(cell.parentNode.children).indexOf(cell);
+        fireShot(gameId, position);
+      }
+    }
+  });
+  playerBoard.addEventListener('click', async (e) => {
+      updateBoards();
+  });
+
+}
+// Add this new code after the global variables
+document.querySelectorAll('.model-button').forEach(button => {
+  button.addEventListener('click', () => {
+    currentModel = button.dataset.model;
+    document.querySelectorAll('.model-button').forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+    uiConsole(`Selected model: ${currentModel}`);
+  });
+});
+function createBoard(id) {
+  const board = document.getElementById(id);
+  for (let i = 0; i < BOARD_CELLS; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('cell');
+    board.appendChild(cell);
+  }
+  return board;
+}
+
+async function createGame() {
+  try {
+    if (!currentModel) {
+      uiConsole('Please select a model before creating a game.');
+      return;
+    }
+    const result = await battleshipContract.createGame(currentModel);
+    const receipt = await result.wait();
+    const event = receipt.events.find(e => e.event === 'GameCreated');
+    currentGameId = event.args.gameId.toNumber();
+    uiConsole(`Game created with ID: ${currentGameId} using model: ${currentModel}. Waiting for opponent...`);
+    gameState = 'waiting';
+  } catch (error) {
+    console.error('Error creating game:', error);
+    uiConsole('Error creating game. Please try again.');
+  }
+}
+
+async function joinGame() {
+  const gameIdInput = document.getElementById('game-id-input').value;
+  const gameId = Number(gameIdInput);
+
+  if (isNaN(gameId) || gameId < 0 || !Number.isInteger(gameId)) {
+    uiConsole('Invalid game ID. Please enter a positive integer.');
+    return;
+  }
+
+  try {
+    console.log('Joining game with ID:', gameId);
+    
+    // Get the signer's address
+    const signerAddress = await battleshipContract.signer.getAddress();
+    console.log('Signer address:', signerAddress);
+
+    // Try to get the game state before joining
+    try {
+      const gameState = await battleshipContract.games(gameId);
+      console.log('Game state before joining:', gameState);
+    } catch (gameStateError) {
+      console.error('Error fetching game state:', gameStateError);
+    }
+
+    // Attempt to join the game
+    const result = await battleshipContract.joinGame(gameId);
+    console.log('Transaction sent:', result.hash);
+    
+    const receipt = await result.wait();
+    console.log('Transaction receipt:', receipt);
+    
+    currentGameId = gameId;
+    uiConsole(`Joined game with ID: ${currentGameId}. Place your ships!`);
+    gameState = 'placing';
+  } catch (error) {
+    console.error('Error joining game:', error);
+    if (error.message) {
+      console.error('Error message:', error.message);
+    }
+    if (error.error && error.error.message) {
+      console.error('Detailed error:', error.error.message);
+    }
+    uiConsole('Error joining game. Please check console for details.');
+  }
+}
+
+
+async function startPlacingShips() {
+  const gameIdInput = document.getElementById('game-id-input').value;
+  const gameId = Number(gameIdInput);
+  
+  if (isNaN(gameId) || gameId < 0 || !Number.isInteger(gameId)) {
+    uiConsole('Invalid game ID. Please enter a positive integer.');
+    return;
+  }
+    const game = await battleshipContract.games(gameId);
+    const signerAddress = await battleshipContract.signer.getAddress();
+    if(signerAddress == game.player2 || signerAddress == game.player1){
+        if(game.state == 1){
+            gameState = 'placing';
+        }
+        else {
+            uiConsole("Not time to place ships");
+        }
+    }
+    else {
+        uiConsole("You are not a player in this game");
+    }
+  if (gameState !== 'placing') {
+    uiConsole('Cannot place ships at this time.');
+    return;
+  }
+  
+  playerShips = [];
+  uiConsole('Place your ships. Click on the cells to place a 3-cell submarine and a 2-cell destroyer.');
+  
+  playerBoard.addEventListener('click', placeShip);
+}
+
+function placeShip(e) {
+  if (playerShips.length >= TOTAL_SHIP_CELLS) {
+    playerBoard.removeEventListener('click', placeShip);
+    submitShipPlacements();
+    return;
+  }
+  
+  const cell = e.target;
+  if (cell.classList.contains('cell') && !cell.classList.contains('ship')) {
+    const position = Array.from(cell.parentNode.children).indexOf(cell);
+    playerShips.push(position);
+    cell.classList.add('ship');
+    
+    if (playerShips.length === TOTAL_SHIP_CELLS) {
+      uiConsole('All ships placed. Submitting placements...');
+      submitShipPlacements();
+    }
+  }
+}
+
+async function submitShipPlacements() {
+  try {
+    const gameIdInput = document.getElementById('game-id-input').value;
+    currentGameId = Number(gameIdInput);
+    const encryptedBoard = await encryptShipPlacements(playerShips);
+    await battleshipContract.placeShips(currentGameId, encryptedBoard);
+    uiConsole('Ships placed successfully. Waiting for opponent...');
+    gameState = 'playing';
+    checkGameState(currentGameId);
+  } catch (error) {
+    console.error('Error placing ships:', error);
+    uiConsole('Error placing ships. Please try again.');
+  }
+}
+/*
+        try {
+            const encryptedPositions = await Promise.all(shipPositions.map(pos => 
+                fhenixClient.encrypt(pos, EncryptionTypes.uint8)
+            ));
+
+            const tx = await contract.placeShips(gameId, encryptedPositions);
+            await tx.wait();
+            gameInfo.textContent = 'Board submitted successfully!';
+        } catch (error) {
+            console.error('Failed to submit board:', error);
+            gameInfo.textContent = 'Failed to submit board. Check console for details.';
+        }
+    }
+*/
+async function encryptShipPlacements(placements) {
+    console.log("encrypting ships...");
+    const encryptedPositions = await Promise.all(placements.map(pos => 
+        fhenixClient.encrypt(pos, EncryptionTypes.uint8)
+    ));
+    return encryptedPositions;
+}
+
+    async function fireShot(game_Id, position) {
+        console.log("firing...");
+        if (!isPlayerTurn) return;
+        
+        try {
+            console.log(position);
+            const result = await battleshipContract.fireShot(game_Id, position);
+            const receipt = await result.wait();
+            console.log(receipt);
+            const event = receipt.events.find(e => e.event === 'ShotFired');
+            console.log(event);
+            console.log(event.args);
+            const hit = event.args.hit;
+            console.log(hit);
+            updateBoards();
+            isPlayerTurn = false;
+            uiConsole(hit ? 'Hit! Waiting for opponent...' : 'Miss! Waiting for opponent...');
+            await checkGameState(game_Id);
+            // TODO: add a timer here for 5 secs to see if opponenet plays immideatley
+        } catch (error) {
+            console.error('Error firing shot:', error);
+            uiConsole('Error firing shot. Please try again.');
+        }
+    }
+
+    function updateOpponentBoard(position, hit) {
+        const cell = opponentBoard.children[position];
+        cell.classList.add(hit ? 'hit' : 'miss');
+    }
+async function updateBoards() {
+    await updatePlayerBoard();
+    await updateOpponentHitBoard();
+    let game = await battleshipContract.games(currentGameId);
+    // Remove 'active' class from all buttons
+    document.querySelectorAll('.model-button').forEach(button => {
+      button.classList.remove('active');
+    });
+    
+    // Find the button corresponding to the current model and add 'active' class
+    const activeButton = document.querySelector(`.model-button[data-model="${game.model}"]`);
+    if (activeButton) {
+      activeButton.classList.add('active');
+    }
+    
+    // Update any other UI elements that depend on the model (if needed)
+    // For example, updating a display of the current model:
+    const modelDisplay = document.getElementById('current-model-display');
+    if (modelDisplay) {
+      modelDisplay.textContent = `Current Model: ${game.model}`;
+    }
+    console.log(game.modelOdds);
+    document.getElementById("oddsBox").innerHTML = game.modelOdds;
+}
+async function updatePlayerBoard() {
+    try {
+        console.log(permit);
+        const ships = await battleshipContract.getShips(currentGameId, permit);
+        const playerAddress = await battleshipContract.signer.getAddress();
+        const hitByBoard = await battleshipContract.getHitBoard(currentGameId, playerAddress);
+        
+        playerBoard.querySelectorAll('.cell').forEach((cell, index) => {
+            // Preserve the 'ship' class if it's already there
+            const isShip = cell.classList.contains('ship');
+            
+            // Reset hit and miss classes
+            cell.classList.remove('hit', 'miss');
+            
+            // Add 'ship' class if it's in the ships array or was previously marked as a ship
+            // Still prevent the 0th cell from being a ship
+            if ((ships.includes(index) || isShip) && index !== 0) {
+                cell.classList.add('ship');
+            } else {
+                cell.classList.remove('ship');
+            }
+            
+            // Add hit or miss classes based on the hitByBoard
+            if (hitByBoard[index] === 2) {
+                cell.classList.add('hit');
+            } else if (hitByBoard[index] === 1) {
+                cell.classList.add('miss');
+            }
+        });
+
+        console.log('Ships:', ships);
+        console.log('HitByBoard:', hitByBoard);
+    } catch (error) {
+        console.error('Error updating player board:', error);
+    }
+}
+
+    async function updateOpponentHitBoard() {
+        try {
+            const theGame = await battleshipContract.games(currentGameId);
+            const opponentAddress = theGame.player2;
+            console.log(opponentAddress);
+            const hitBoard = await battleshipContract.getHitBoard(currentGameId, opponentAddress);
+            opponentBoard.querySelectorAll('.cell').forEach((cell, index) => {
+                if (hitBoard[index] === 2) {
+                    cell.classList.add('hit');
+                } else if (hitBoard[index] === 1) {
+                    cell.classList.add('miss');
+                }
+            });
+        } catch (error) {
+            console.error('Error updating opponent hit board:', error);
+        }
+    }
+    async function checkGameState(gameid) {
+        // TODO: figure out how to display winner and such
+        try {
+            const game = await battleshipContract.games(gameid);
+            if (game.state === '2') { // Finished
+                const winner = game.winner;
+                const currentAccount = await getCurrentAccount();
+                uiConsole(winner === currentAccount ? 'You won!' : 'You lost!');
+                gameState = 'finished';
+            } else if (game.state === '1') { // Playing
+                isPlayerTurn = await isCurrentPlayerTurn();
+                uiConsole(isPlayerTurn ? 'Your turn' : "Opponent's turn");
+                await updateBoards();
+            }
+        } catch (error) {
+            console.error('Error checking game state:', error);
+        }
+    }
+
+async function isCurrentPlayerTurn() {
+  // This is a placeholder. Implement the actual turn checking logic based on your contract
+  const gameIdInput = document.getElementById('game-id-input').value;
+  const gameId = Number(gameIdInput);
+
+  if (isNaN(gameId) || gameId < 0 || !Number.isInteger(gameId)) {
+    uiConsole('Invalid game ID. Please enter a positive integer.');
+    return;
+  }
+
+  let gameData = await battleshipContract.games(gameId);
+  let player1 = gameData.player1;
+  let player2 = gameData.player2;
+  const signerAddress = await battleshipContract.signer.getAddress();
+  if(player1 == signerAddress && gameData.player1sTurn){
+      uiConsole("It's your turn");
+      console.log("It's your turn");
+      return true;
+  } else if (player2 == signerAddress && !gameData.player1sTurn) {
+      console.log("It's your turn");
+      uiConsole("It's your turn");
+      return true;
+  } else {
+      console.log("Not your game");
+      uiConsole("Not your turn");
+      return false;
+  }
+}
+
+async function getCurrentAccount() {
+  const accounts = await web3.eth.getAccounts();
+  return accounts[0];
+}
+
+
+
+// Function to handle the betting process
+async function placeBet(amount) {
+    try {
+        const amountInWei = ethers.utils.parseEther(amount.toString());
+        let gameData = await battleshipContract.placeBet(currentGameId, { value: amountInWei });
+        console.log("Bet placed:", gameData);
+        uiConsole(`Bet of ${amount} ETH placed successfully!`);
+    } catch (e) {
+        console.error('Error placing bet:', e);
+        uiConsole(`Error placing bet: ${e.message}`);
+    }
+}
+
+// Updated click event handler for the odds box
+$("#oddsBox").click(async function (event) {
+    // Prompt the user for the bet amount
+    const betAmount = prompt("Enter the amount you want to bet (in ETH):", "0.0001");
+    
+    // Check if the user entered a valid number
+    if (betAmount !== null && !isNaN(betAmount)) {
+        const amount = parseFloat(betAmount);
+        if (amount > 0) {
+            await placeBet(amount);
+        } else {
+            uiConsole("Please enter a positive bet amount.");
+        }
+    } else if (betAmount !== null) {
+        uiConsole("Invalid bet amount. Please enter a number.");
+    }
+    // If betAmount is null, it means the user cancelled the prompt, so we do nothing
+});
+
+$("#login").click(async function (event) {
+  try {
+    await web3auth.connect();
+    $(".btn-logged-out").hide();
+    $(".btn-logged-in").show();
+    uiConsole("Logged in Successfully!");
+  } catch (error) {
+    console.error(error.message);
+  }
+});
+
+$("#get-user-info").click(async function (event) {
+  try {
+    const user = await web3auth.getUserInfo();
+    uiConsole(user);
+  } catch (error) {
+    console.error(error.message);
+  }
+});
+
+$("#get-accounts").click(async function (event) {
+  try {
+    const web3 = new Web3(web3auth.provider);
+
+    // Get user's Ethereum public address
+    const address = await web3.eth.getAccounts();
+    uiConsole(address);
+  } catch (error) {
+    console.error(error.message);
+  }
+});
+
+$("#get-balance").click(async function (event) {
+  try {
+    const web3 = new Web3(web3auth.provider);
+
+    // Get user's Ethereum public address
+    const address = (await web3.eth.getAccounts())[0];
+
+    // Get user's balance in ether
+    const balance = web3.utils.fromWei(
+      await web3.eth.getBalance(address), // Balance is in wei
+      "ether"
+    );
+    uiConsole(balance);
+  } catch (error) {
+    console.error(error.message);
+  }
+});
+
+$("#show-wallet").click(async function (event) {
+  // print status in console
+  uiConsole(walletServicesPlugin.status);
+  if (walletServicesPlugin.status == "connected") {
+    // check if wallet is connected
+    await walletServicesPlugin.showWalletUi();
+  }
+});
+
+$("#sign-message").click(async function (event) {
+  try {
+    const web3 = new Web3(web3auth.provider);
+    // Get user's Ethereum public address
+    const fromAddress = (await web3.eth.getAccounts())[0];
+
+    const originalMessage = "YOUR_MESSAGE";
+
+    // Sign the message
+    const signedMessage = await web3.eth.personal.sign(
+      originalMessage,
+      fromAddress,
+      "test password!" // configure your own password here.
+    );
+    uiConsole(signedMessage);
+  } catch (error) {
+    console.error(error.message);
+  }
+});
+
+$("#logout").click(async function (event) {
+  try {
+    await web3auth.logout();
+    $(".btn-logged-in").hide();
+    $(".btn-logged-out").show();
+  } catch (error) {
+    console.error(error.message);
+  }
+});
+
+// Modify your existing uiConsole function to update the game status as well
+function uiConsole(...args) {
+  const el = document.querySelector("#console>p");
+  if (el) {
+    el.innerHTML = JSON.stringify(args || {}, null, 2);
+    console.log(...args);
+  }
+  // Update game status
+  document.getElementById('game-status').textContent = args[0];
+}
+
+  </script>
+</body>
+
+</html>
