@@ -9,3 +9,9 @@ https://webed.academy/benchMarket/index.html
 Video:
 
 https://www.youtube.com/watch?v=HcfgL74MmY4
+
+Block explorer:
+
+https://explorer.galadriel.com/address/0xBA8dEAb7480c81397aEDa194BeA12dc3E0579504
+
+https://explorer.helium.fhenix.zone/address/0xD539E35acd3A965655FCfDD1fe47f125D12C96A0
